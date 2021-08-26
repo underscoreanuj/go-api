@@ -1,0 +1,10 @@
+// build image
+
+docker build -t golang-api .
+
+
+// run the image
+
+docker run -p 8080:8000 golang-api
+
+// the api is now available on the 8080 port
