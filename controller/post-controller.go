@@ -1,6 +1,9 @@
 package controller
 
 import (
+	"strings"
+
+	"github.com/underscoreanuj/mux_api/cache"
 	"github.com/underscoreanuj/mux_api/entity"
 	"github.com/underscoreanuj/mux_api/errors"
 	"github.com/underscoreanuj/mux_api/service"
@@ -13,16 +16,43 @@ type controller struct{}
 
 var (
 	postService service.PostService
+	postCache   cache.PostCache
 )
 
 type PostController interface {
+	GetPostById(response http.ResponseWriter, request *http.Request)
 	GetPosts(resp http.ResponseWriter, req *http.Request)
 	AddPost(resp http.ResponseWriter, req *http.Request)
 }
 
-func NewPostController(service service.PostService) PostController {
+func NewPostController(service service.PostService, cache cache.PostCache) PostController {
 	postService = service
+	postCache = cache
 	return &controller{}
+}
+
+func (*controller) GetPostById(resp http.ResponseWriter, req *http.Request) {
+	resp.Header().Set("Content-Type", "application/json")
+	postId := strings.Split(req.URL.Path, "/")[2]
+	var post *entity.Post = postCache.Get(postId)
+
+	if post == nil {
+		post, err := postService.FindById(postId)
+		if err != nil {
+			resp.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(resp).Encode(errors.ServiceError{Message: "No post found!"})
+			return
+		}
+		postCache.Set(postId, post)
+
+		resp.WriteHeader(http.StatusOK)
+		json.NewEncoder(resp).Encode(post)
+
+	} else {
+		resp.WriteHeader(http.StatusOK)
+		json.NewEncoder(resp).Encode(post)
+
+	}
 }
 
 func (*controller) GetPosts(resp http.ResponseWriter, req *http.Request) {

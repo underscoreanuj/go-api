@@ -25,6 +25,12 @@ func (mock *MockRepository) FindAll() ([]entity.Post, error) {
 
 }
 
+func (mock *MockRepository) FindById(id string) (*entity.Post, error) {
+	args := mock.Called()
+	result := args.Get(0)
+	return result.(*entity.Post), args.Error(1)
+}
+
 func (mock *MockRepository) Delete(post *entity.Post) error {
 	args := mock.Called()
 	_ = args.Get(0)

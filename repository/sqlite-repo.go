@@ -109,6 +109,36 @@ func (*sqliteRepo) FindAll() ([]entity.Post, error) {
 
 }
 
+func (*sqliteRepo) FindById(id string) (*entity.Post, error) {
+	db, err := sql.Open("sqlite3", "./posts.db")
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
+	row := db.QueryRow("select Id, Title, Text from posts where id = ?", id)
+
+	var post entity.Post
+	if row != nil {
+		var id int64
+		var title string
+		var text string
+
+		err := row.Scan(&id, &title, &text)
+		if err != nil {
+			return nil, err
+		} else {
+			post = entity.Post{
+				Id:    id,
+				Title: title,
+				Text:  text,
+			}
+		}
+	}
+
+	return &post, nil
+}
+
 func (*sqliteRepo) Delete(post *entity.Post) error {
 	db, err := sql.Open("sqlite3", "./posts.db")
 	if err != nil {
